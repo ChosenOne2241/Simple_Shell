@@ -16,5 +16,7 @@ void print_prompt(void)
 		timeinfo = localtime(&raw_time);
 		strftime(time_buffer, BUFFER_SIZE, TIME_FORMAT, timeinfo);
 		printf(PS1, time_buffer);
+		fflush(stdout);
+		// Flush right after printing out prompt in the output buffer.
 	}
 }

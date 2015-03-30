@@ -37,6 +37,4 @@ void handler(int signo)
 		default:
 			break;
 	}
-	fflush(stdout);
-	// Flush right after printing out prompt in the output buffer.
 }

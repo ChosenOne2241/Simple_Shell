@@ -6,65 +6,60 @@
 #include <sys/wait.h>
 
 #define WHITESPACE " \r\n\t\v\f"
-#define CHANGEDIRECTORY "cd"
+#define CHANGEDIR "cd"
 
-char** parse_command(char* line)
+char** parse_command(char* command_line)
 {
 	int num_args = 0; // Record the number of arguments in each command.
 	char* temp;
-	char** output_str = malloc(sizeof(char*));
+	char** arg_vectors = malloc(sizeof(char*));
 
-	if ( output_str == NULL )
+	if ( arg_vectors == NULL )
 	{
 		perror("");
 		exit(EXIT_FAILURE);
 	}
-	temp = strtok(line, WHITESPACE);
+	temp = strtok(command_line, WHITESPACE);
 	// Remove all whitespace characters.
 	if ( temp == NULL )
 	// If it is an empty command (just containing whitespace characters).
 	{
 		return NULL;
 	}
-	while ( temp != NULL )
+	do
 	{
-		output_str[num_args] = temp;
+		arg_vectors[num_args] = temp;
 		num_args++;
-		output_str = realloc(output_str, (num_args + 1) * sizeof(char*));
-		if ( output_str == NULL )
+		arg_vectors = realloc(arg_vectors, (num_args + 1) * sizeof(char*));
+		if ( arg_vectors == NULL )
 		{
 			perror("");
 			exit(EXIT_FAILURE);
 		}
 		temp = strtok(NULL, WHITESPACE);
 	}
-	num_args++;
-	output_str = realloc(output_str, (num_args + 1) * sizeof(char*));
-	// Create an extra slot for null character.
-	if ( output_str == NULL )
-	{
-		perror("");
-		exit(EXIT_FAILURE);
-	}
-	output_str[num_args] = NULL;
-	return output_str;
+	while ( temp != NULL );
+	arg_vectors[num_args] = NULL;
+	// The list of arguments must be terminated by a NULL pointer.
+	return arg_vectors;
 }
 
-void execute_command(char** output_str)
+void execute_command(char** arg_vectors)
 {
 	pid_t childPID;
 	int child_status;
 	// Variables above are used in fork().
-	if ( strcmp(output_str[0], CHANGEDIRECTORY) )
+
+	if ( strcmp(arg_vectors[0], CHANGEDIR) )
 	{
 		childPID = fork();
 		if ( childPID >= 0 )
 		{
 			if ( childPID == 0 ) // Child process.
 			{
-				if ( execvp(output_str[0], output_str) == -1 )
+				if ( execvp(arg_vectors[0], arg_vectors) == -1 )
 				{
-					perror(output_str[0]);
+					perror(arg_vectors[0]);
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -82,17 +77,17 @@ void execute_command(char** output_str)
 	else
 	{
 		int dir;
-		if ( output_str[1] == NULL )
+		if ( arg_vectors[1] == NULL )
 		{
 			dir = chdir(getenv("HOME"));
 		}
 		else
 		{
-			dir = chdir(output_str[1]);
+			dir = chdir(arg_vectors[1]); // Ignore rest of arguments.
 		}
-		if ( dir == -1 )
+		if ( dir == -1 ) // If the program cannot change working directory.
 		{
-			fprintf(stderr, "cd: %s: ", output_str[1]);
+			fprintf(stderr, "%s: %s: ", CHANGEDIR, arg_vectors[1]);
 			perror("");
 		}
 	}
